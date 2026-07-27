@@ -52,12 +52,21 @@ public class ProductionOrderController {
                 retcount = pageResponse.getRecordList().size();
                 List<Map<String,Object>> allDetails = new ArrayList<>();
                 for(Map<String, Object> tmpresult : pageResponse.getRecordList()){
-                    Map<String,String> map = new HashMap<>();
-                    map.put("id",tmpresult.get("id").toString());
-                    Map<String, Object> detail =  productionOrderService.detail(map);
-                    if(!CollectionUtils.isEmpty(detail)){
-                        detail = ParamUtil.formatSingleData("productionOrder", detail);
-                        allDetails.add(detail);
+                    //2026-07-27 按交易类型过滤，只查胶水的订单。因列表查询时无法按多个交易类型一次过滤，故在查详情前过滤
+                    //胶水标准生产 PO-001 2532580560639363416
+                    //胶水多阶生产 PO-009 2560018452381696006
+                    String transTypeId = (String) tmpresult.get("transTypeId");
+                    if("2532580560639363416".equals(transTypeId)||"2560018452381696006".equals(transTypeId)) {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("id", tmpresult.get("id").toString());
+                        Map<String, Object> detail = productionOrderService.detail(map);
+                        if (!CollectionUtils.isEmpty(detail)) {
+                            detail = ParamUtil.formatSingleData("productionOrder", detail);
+                            allDetails.add(detail);
+                        }
+                    }else{
+                        allcount--;
+                        retcount--;
                     }
                 }
                 result = allDetails;
@@ -123,7 +132,6 @@ public class ProductionOrderController {
         qryParams.put("pageSize", inputParams.getOrDefault("page_size", 200));
         qryParams.put("isSum", true);//固定条件
         qryParams.put("status", "5");//查已开工的订单 1 已审核 5 已开工
-
         //单号
         if (inputParams.containsKey("scddh") && inputParams.get("scddh") != null && !"".equals(inputParams.get("scddh").toString())) {
             qryParams.put("code", inputParams.get("scddh"));
