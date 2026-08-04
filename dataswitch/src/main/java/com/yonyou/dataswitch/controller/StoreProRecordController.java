@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -191,18 +192,39 @@ public class StoreProRecordController {
                 //if(CollectionUtils.isEmpty(mapList)){
                 //    throw new Exception("产成品编码"+product_code+"不在产品入库单中");
                 //}else {
+//2026-08-02 modify:
+// 产品入库单仅更新累计入库数量时不会触发存量更新的逻辑，必须要更新应收数量才行。
+// 同时传过来的数量即实收数量，不再累加（因为现在永固单据都是1对1的）
+//                    //更新
+//                    Map<String,Object> childvo1 = childvo.get(0);
+//                    BigDecimal incomingQuantity = new BigDecimal(childvo1.get("incomingQuantity").toString());
+//                    BigDecimal inputQuantity = new BigDecimal(productinfo1.get("qty").toString());
+//                    incomingQuantity = incomingQuantity.add(inputQuantity);
+//                    //更新累计入库数量
+//                    childvo1.put("incomingQuantity",incomingQuantity);
+//                    childvo1.put("_status","Update");
+//                    BigDecimal inboundQuantity = new BigDecimal(childvo1.get("qty").toString());
+//                    if(incomingQuantity.compareTo(inboundQuantity)>=0){
+//                        params.put("isUpdateMO","1");
+//                    }
                     //更新
                     Map<String,Object> childvo1 = childvo.get(0);
-                    BigDecimal incomingQuantity = new BigDecimal(childvo1.get("incomingQuantity").toString());
-                    BigDecimal inputQuantity = new BigDecimal(productinfo1.get("qty").toString());
-                    incomingQuantity = incomingQuantity.add(inputQuantity);
-                    //更新累计入库数量
-                    childvo1.put("incomingQuantity",incomingQuantity);
                     childvo1.put("_status","Update");
-                    BigDecimal inboundQuantity = new BigDecimal(childvo1.get("qty").toString());
-                    if(incomingQuantity.compareTo(inboundQuantity)>=0){
-                        params.put("isUpdateMO","1");
-                    }
+                    //取换算率，计算累计入库数量对应的件数
+                    BigDecimal invExchRate = new BigDecimal(childvo1.get("invExchRate").toString());
+                    //mes本次传的数量
+                    BigDecimal inputQuantity = new BigDecimal(productinfo1.get("qty").toString());
+                    //根据换算率计算件数
+                    BigDecimal subQty = inputQuantity.divide(invExchRate,0, RoundingMode.HALF_UP);
+                    //累计入库数量
+                    childvo1.put("incomingQuantity",inputQuantity);
+                    //应收数量
+                    childvo1.put("qty",inputQuantity);
+                    //应收件数
+                    childvo1.put("subQty",subQty);
+                    //因为mes侧产品入库是1对1的，只会更新一次，所以不用加判断条件了直接传更新生产订单完工标识
+                    params.put("isUpdateMO","1");
+
                     Map<String,Object> bodyParam = new HashMap<>();
                     //根据映射文件转换参数
                     Properties storeProRecordDetailProps = ExchangeUtil.getProperty("storeProRecords.properties");

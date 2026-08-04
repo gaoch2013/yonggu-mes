@@ -1,6 +1,7 @@
 package com.yonyou.dataswitch.controller;
 
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Instant;
 import com.yonyou.dataswitch.base.response.ApiDataPageResponse;
@@ -184,6 +185,8 @@ public class FinishedReportController {
                     throw  new Exception(String.format("未查询到生产订单%s数据，请检查生产订单号是否正确或者状态是否已开工",inputParams.get("mocode")));
                 }
                 Map<String, Object> orderMap = (Map<String, Object>)datasMap.get(0).get("parentvo");
+                //计划完工数量（生产订单数量）
+                BigDecimal jhwgsl = new BigDecimal(orderMap.get("jhwgsl").toString());
                 //工厂编码
                 saveParams.put("orgCode", inputParams.get("orgCode"));
                 //交易类型 固定值取默认交易类型
@@ -249,7 +252,12 @@ public class FinishedReportController {
 //                    }
 
                     //完工数量
-                    bodyParam.put("quantity",productinfo.get("qty"));
+                    BigDecimal wgsl = new BigDecimal(productinfo.get("qty").toString());
+                    if(wgsl.compareTo(jhwgsl)>0){
+                        //如果完工数量>计划完工数量，则以计划完工数量传给完工报告，否则完工报告保存会校验完工数量超量
+                        wgsl = jhwgsl;
+                    }
+                    bodyParam.put("quantity",wgsl);
                     //产品检验
                     bodyParam.put("inspection",false);
                     //库存组织 现阶段库存组织和工厂是一个
