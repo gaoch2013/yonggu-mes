@@ -208,7 +208,6 @@ public class MaterialOutController {
                 if (!CollectionUtils.isEmpty(mapList0)) {
                     //匹配到的材料出库单表体只会有一条记录，所以取第0条即可。更新数量 确认应发数量不更新。
                     Map<String, Object> childvo = mapList0.get(0);
-                    childvo.put("qty", productinfo0.get("qty"));
                     //根据物料编码查询物料详情
                     String productCode= productinfo0.get("product").toString();
                     Map<String, Object> productdata = pubUtil.getProductInfoByCode(productCode);
@@ -216,7 +215,13 @@ public class MaterialOutController {
                     BigDecimal qty = new BigDecimal(productinfo0.get("qty").toString());
                     BigDecimal invExchRate = new BigDecimal(productdata.get("invExchRate").toString());
                     BigDecimal subQty = qty.divide(invExchRate,8,BigDecimal.ROUND_HALF_UP);
-                    childvo.put("subQty", subQty.toString());
+                    childvo.put("qty", qty);
+                    childvo.put("subQty", subQty);
+                    //货位 永固客户没有启用货位
+                    //childvo.put("goodsposition", "000001");
+                    //2026-08-05 modify 解决材料出库单修改报错：累计出库数量不可小于0
+                    childvo.put("contactsQuantity",qty);
+                    childvo.put("contactsPieces", subQty);
                     childvo.put("_status","Update");
                     Map<String, Object> bodyParam = new HashMap<>();
                     //根据映射文件转换参数
@@ -271,14 +276,17 @@ public class MaterialOutController {
                             Map<String, Object> batchnodata = pubUtil.getBatchNoInfoByProduct(productId, batchno, productCode);
                             childvo2.put("producedate", batchnodata.get("producedate"));
                             childvo2.put("invaliddate", batchnodata.get("invaliddate"));
-                            childvo2.put("qty", productinfo1.get("qty"));
                             //辅计量数量
                             BigDecimal qty = new BigDecimal(productinfo1.get("qty").toString());
                             BigDecimal invExchRate = new BigDecimal(productdata.get("invExchRate").toString());
                             BigDecimal subQty = qty.divide(invExchRate,8,BigDecimal.ROUND_HALF_UP);
-                            childvo2.put("subQty", subQty.toString());
+                            childvo2.put("qty", qty);
+                            childvo2.put("subQty", subQty);
                             //货位 永固客户没有启用货位
-                            //childvo2.put("goodsposition", "000001");
+                            //childvo.put("goodsposition", "000001");
+                            //2026-08-05 modify 解决材料出库单修改报错：累计出库数量不可小于0
+                            childvo2.put("contactsQuantity",qty);
+                            childvo2.put("contactsPieces", subQty);
                             childvo2.remove("id");
                             childvo2.remove("pubts");
                             childvo2.put("_status", "Insert");
@@ -318,14 +326,17 @@ public class MaterialOutController {
                             Map<String, Object> batchnodata = pubUtil.getBatchNoInfoByProduct(productId, batchno, productCode);
                             childvo.put("producedate", batchnodata.get("producedate"));
                             childvo.put("invaliddate", batchnodata.get("invaliddate"));
-                            childvo.put("qty", productinfo1.get("qty"));
                             //辅计量数量
                             BigDecimal qty = new BigDecimal(productinfo1.get("qty").toString());
                             BigDecimal invExchRate = new BigDecimal(productdata.get("invExchRate").toString());
                             BigDecimal subQty = qty.divide(invExchRate,8,BigDecimal.ROUND_HALF_UP);
-                            childvo.put("subQty", subQty.toString());
+                            childvo.put("qty", qty);
+                            childvo.put("subQty", subQty);
                             //货位 永固客户没有启用货位
                             //childvo.put("goodsposition", "000001");
+                            //2026-08-05 modify 解决材料出库单修改报错：累计出库数量不可小于0
+                            childvo.put("contactsQuantity",qty);
+                            childvo.put("contactsPieces", subQty);
                             childvo.put("_status", "Update");
                             Map<String, Object> bodyParam = new HashMap<>();
                             //根据映射文件转换参数
